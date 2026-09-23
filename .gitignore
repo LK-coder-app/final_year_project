@@ -3,7 +3,7 @@
 *.env
 !.env.example
 
-# Python
+# Python virtualenvs & cache
 __pycache__/
 *.py[cod]
 *$py.class
@@ -12,14 +12,11 @@ __pycache__/
 env/
 venv/
 .venv/
-build/
 develop-eggs/
 dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
 parts/
 sdist/
 var/
@@ -28,7 +25,7 @@ wheels/
 .installed.cfg
 *.egg
 
-# Database & Generated Reports
+# Database & Generated User PDFs
 *.db
 *.sqlite3
 agrimind.db
@@ -43,12 +40,10 @@ reports/*.pdf
 .flutter-plugins
 .flutter-plugins-dependencies
 
-# Keep the compiled production web builds for Render deployment
-agrimind_farmer_flutter/build/*
-!agrimind_farmer_flutter/build/web/
-agrimind_admin_flutter/build/*
-!agrimind_admin_flutter/build/web/
+# Intermediate Flutter build directories (keep web production release)
 agrimind_flutter/build/
+agrimind_farmer_flutter/build/web/canvaskit/*.wasm
+agrimind_admin_flutter/build/web/canvaskit/*.wasm
 
 # IDE & Editor files
 .vscode/
