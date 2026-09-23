@@ -50,7 +50,16 @@ REPORTS_DIR = PROJECT_ROOT / "reports"
 if REPORTS_DIR.exists():
     app.mount("/reports", StaticFiles(directory=str(REPORTS_DIR)), name="reports_static")
 
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
+
+# Direct endpoint for Google-styled Missing Data Form
+@app.get("/form", include_in_schema=False)
+@app.get("/form.html", include_in_schema=False)
+def serve_form():
+    form_file = FRONTEND_DIR / "form.html"
+    if form_file.exists():
+        return FileResponse(str(form_file))
+    raise HTTPException(status_code=404, detail="Form page not found")
 
 # Mount Admin Flutter web if built
 if ADMIN_WEB_DIR.exists():

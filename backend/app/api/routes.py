@@ -346,7 +346,7 @@ async def request_missing_data(req_id: int, db: Session = Depends(get_db)):
     record.follow_up_sent_at = datetime.now(timezone.utc)
     db.commit()
 
-    form_url = f"{APP_BASE_URL}/form.html?token={token}"
+    form_url = f"{APP_BASE_URL}/form?token={token}"
 
     # Run analysis to get missing fields if not already done
     if not record.missing_fields:
@@ -448,6 +448,8 @@ async def fill_missing_data(req_id: int, req: FillMissingRequest, db: Session = 
             updated_fields.append(key)
 
     record.extracted_slots = slots
+    record.last_submitted_form_data = req.filled_data
+    record.status = "updated"
     record.follow_up_filled_at = datetime.now(timezone.utc)
     record.updated_at = datetime.now(timezone.utc)
 

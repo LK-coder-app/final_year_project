@@ -17,6 +17,7 @@ class RequirementSummary {
   final String? createdAt;
   final String? followUpToken;
   final String? followUpFilledAt;
+  final Map<String, dynamic>? lastSubmittedFormData;
   final Map<String, dynamic> extractedSlots;
   final List<Map<String, dynamic>> conflicts;
 
@@ -39,6 +40,7 @@ class RequirementSummary {
     this.createdAt,
     this.followUpToken,
     this.followUpFilledAt,
+    this.lastSubmittedFormData,
     required this.extractedSlots,
     required this.conflicts,
   });
@@ -63,6 +65,9 @@ class RequirementSummary {
       createdAt: j['created_at'],
       followUpToken: j['follow_up_token'],
       followUpFilledAt: j['follow_up_filled_at'],
+      lastSubmittedFormData: j['last_submitted_form_data'] != null
+          ? Map<String, dynamic>.from(j['last_submitted_form_data'])
+          : null,
       extractedSlots: Map<String, dynamic>.from(j['extracted_slots'] ?? {}),
       conflicts: (j['conflicts'] as List? ?? []).map((c) => Map<String, dynamic>.from(c)).toList(),
     );

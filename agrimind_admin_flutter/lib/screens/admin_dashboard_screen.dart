@@ -238,6 +238,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           underline: const SizedBox(),
           items: const [
             DropdownMenuItem(value: '', child: Text('All Statuses')),
+            DropdownMenuItem(value: 'updated', child: Text('🔔 Form Updated')),
             DropdownMenuItem(value: 'pending', child: Text('Pending')),
             DropdownMenuItem(value: 'under_review', child: Text('Under Review')),
             DropdownMenuItem(value: 'feasible', child: Text('Feasible')),
@@ -321,7 +322,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(r.farmerName ?? 'Unnamed', style: const TextStyle(fontWeight: FontWeight.w600)),
+                        Row(
+                          children: [
+                            Text(r.farmerName ?? 'Unnamed', style: const TextStyle(fontWeight: FontWeight.w600)),
+                            if (r.followUpFilledAt != null) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: Colors.purple.withValues(alpha: 0.25),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: Colors.purpleAccent, width: 0.8),
+                                ),
+                                child: const Text(
+                                  '🔔 Form Updated',
+                                  style: TextStyle(color: Colors.purpleAccent, fontSize: 9, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                         if (r.farmerPhone != null)
                           Text(r.farmerPhone!, style: const TextStyle(color: AdminColors.slate400, fontSize: 10)),
                       ],
@@ -406,6 +426,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     Color text;
 
     switch (status) {
+      case 'updated':
+        bg = Colors.purple.withValues(alpha: 0.2);
+        text = const Color(0xFFc084fc);
+        break;
       case 'pending':
         bg = Colors.amber.withValues(alpha: 0.15);
         text = Colors.amber;

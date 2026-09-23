@@ -80,6 +80,7 @@ class FarmerRequirement(Base):
     follow_up_token = Column(String(64), unique=True, nullable=True, index=True)
     follow_up_sent_at = Column(DateTime, nullable=True)
     follow_up_filled_at = Column(DateTime, nullable=True)
+    last_submitted_form_data = Column(JSON, nullable=True)
 
     # Metadata
     created_at = Column(DateTime, default=utcnow)
@@ -128,6 +129,7 @@ def _migrate_add_columns():
             "follow_up_token": "VARCHAR(64)",
             "follow_up_sent_at": "DATETIME",
             "follow_up_filled_at": "DATETIME",
+            "last_submitted_form_data": "TEXT",
             "pdf_version": "INTEGER DEFAULT 1",
         }
         with engine.connect() as conn:

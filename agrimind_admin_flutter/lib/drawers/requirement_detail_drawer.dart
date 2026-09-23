@@ -185,6 +185,10 @@ class _RequirementDetailDrawerState extends State<RequirementDetailDrawer> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Form Response Notification Banner (Google Form Submitted)
+                  if (req.followUpFilledAt != null || req.lastSubmittedFormData != null)
+                    _buildFormResponseNotificationCard(req),
+
                   // Farmer Summary Card
                   _buildFarmerCard(req),
                   const SizedBox(height: 16),
@@ -397,6 +401,225 @@ class _RequirementDetailDrawerState extends State<RequirementDetailDrawer> {
     );
   }
 
+  static const Map<String, String> _fieldDisplayLabels = {
+    'land_size': 'Farm Land Area',
+    'land_unit': 'Land Unit',
+    'crop_types': 'Target Crops',
+    'water_source': 'Water Source',
+    'motor_hp': 'Pump Motor HP',
+    'irrigation_type': 'Irrigation Method',
+    'soil_type': 'Soil Type',
+    'borewell_depth_ft': 'Borewell Depth (feet)',
+    'open_well_depth_ft': 'Open Well Depth (feet)',
+    'power_supply_phase': 'Power Supply Phase',
+    'power_hours_per_day': 'Power Hours / Day',
+    'district': 'District',
+    'budget_inr': 'Budget (₹ INR)',
+  };
+
+  Widget _buildFormResponseNotificationCard(RequirementSummary req) {
+    final updatedKeys = req.lastSubmittedFormData?.keys.toList() ?? [];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2e1065).withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFc084fc), width: 1.2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.notifications_active, color: Color(0xFFc084fc), size: 18),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  '🔔 Google Form Response Submitted!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.purple.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text('Updated', style: TextStyle(color: Color(0xFFd8b4fe), fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'The farmer has submitted missing information via Google Form on ${req.followUpFilledAt ?? 'recently'}. ${updatedKeys.isNotEmpty ? '(${updatedKeys.length} parameter(s) updated)' : ''}',
+            style: const TextStyle(color: AdminColors.slate300, fontSize: 11),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              ElevatedButton.icon(
+                onPressed: () => _showReviewFormDialog(req),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF7c3aed),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+                icon: const Icon(Icons.rate_review, size: 14),
+                label: const Text('Review Submitted Form Data'),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: _isRegenerating ? null : _regeneratePdf,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AdminColors.emerald300,
+                  side: const BorderSide(color: AdminColors.emerald500),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  textStyle: const TextStyle(fontSize: 11),
+                ),
+                icon: _isRegenerating
+                    ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: AdminColors.emerald400))
+                    : const Icon(Icons.autorenew, size: 14),
+                label: const Text('Regenerate PDF'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReviewFormDialog(RequirementSummary req) {
+    final submitted = req.lastSubmittedFormData ?? req.extractedSlots;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: AdminColors.slate900,
+          titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: Color(0xFF334155)),
+          ),
+          title: Row(
+            children: [
+              const Icon(Icons.assignment_turned_in, color: Color(0xFFc084fc), size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Review Google Form Submission (AGM-${req.id.toString().padLeft(4, '0')})',
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: 550,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Submitted by ${req.farmerName ?? 'Farmer'} (${req.farmerPhone ?? 'No Phone'}) on ${req.followUpFilledAt ?? 'recently'}',
+                    style: const TextStyle(color: AdminColors.slate400, fontSize: 12),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AdminColors.slate950,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF1e293b)),
+                    ),
+                    child: Table(
+                      columnWidths: const {
+                        0: FlexColumnWidth(1.2),
+                        1: FlexColumnWidth(1.5),
+                      },
+                      border: const TableBorder(
+                        horizontalInside: BorderSide(color: AdminColors.slate800, width: 1),
+                      ),
+                      children: submitted.entries.where((e) => !e.key.startsWith('_')).map((entry) {
+                        final label = _fieldDisplayLabels[entry.key] ?? entry.key;
+                        final valStr = entry.value is List ? (entry.value as List).join(', ') : '${entry.value}';
+                        final isNewField = req.lastSubmittedFormData?.containsKey(entry.key) ?? false;
+
+                        return TableRow(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Text(
+                                label,
+                                style: const TextStyle(color: AdminColors.slate300, fontSize: 12, fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      valStr,
+                                      style: TextStyle(
+                                        color: isNewField ? AdminColors.emerald300 : Colors.white,
+                                        fontWeight: isNewField ? FontWeight.bold : FontWeight.normal,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isNewField)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                      decoration: BoxDecoration(
+                                        color: AdminColors.emerald500.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text('Updated', style: TextStyle(color: AdminColors.emerald400, fontSize: 9, fontWeight: FontWeight.bold)),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Close', style: TextStyle(color: AdminColors.slate400)),
+            ),
+            ElevatedButton.icon(
+              onPressed: () async {
+                Navigator.of(ctx).pop();
+                await _regeneratePdf();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AdminColors.emerald600,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              ),
+              icon: const Icon(Icons.picture_as_pdf, size: 14),
+              label: const Text('Approve & Regenerate PDF'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildMissingDataSection() {
     return Container(
       padding: const EdgeInsets.all(14),
@@ -411,19 +634,25 @@ class _RequirementDetailDrawerState extends State<RequirementDetailDrawer> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Farmer Follow-up Link', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13)),
+              const Row(
+                children: [
+                  Icon(Icons.assignment, color: Color(0xFFc084fc), size: 16),
+                  SizedBox(width: 6),
+                  Text('Request Missing Data (Google Form)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13)),
+                ],
+              ),
               ElevatedButton.icon(
                 onPressed: _isRequestingMissing ? null : _requestMissing,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AdminColors.emerald600,
+                  backgroundColor: const Color(0xFF673ab7),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  textStyle: const TextStyle(fontSize: 11),
+                  textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
                 ),
                 icon: _isRequestingMissing
                     ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const Icon(Icons.send_to_mobile, size: 14),
-                label: Text(_isRequestingMissing ? 'Generating...' : 'Request Missing Data'),
+                label: Text(_isRequestingMissing ? 'Generating...' : 'Generate Google Form'),
               ),
             ],
           ),
@@ -435,27 +664,37 @@ class _RequirementDetailDrawerState extends State<RequirementDetailDrawer> {
               decoration: BoxDecoration(
                 color: AdminColors.slate900,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: AdminColors.emerald500.withValues(alpha: 0.3)),
+                border: Border.all(color: const Color(0xFF673ab7).withValues(alpha: 0.5)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(
-                        _missingRequest!.smsSent ? Icons.check_circle : Icons.info_outline,
-                        color: _missingRequest!.smsSent ? AdminColors.emerald400 : Colors.amber,
+                      const Icon(
+                        Icons.check_circle,
+                        color: Color(0xFFc084fc),
                         size: 14,
                       ),
                       const SizedBox(width: 6),
-                      Text(
-                        _missingRequest!.smsSent ? 'SMS Dispatched via Twilio' : 'Shareable Link Ready',
+                      const Text(
+                        'Google Form Link Ready & Dispatched',
                         style: TextStyle(
-                          color: _missingRequest!.smsSent ? AdminColors.emerald300 : Colors.amber,
+                          color: Color(0xFFd8b4fe),
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      const Spacer(),
+                      if (_missingRequest!.smsSent)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AdminColors.emerald500.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text('SMS Sent', style: TextStyle(color: AdminColors.emerald400, fontSize: 9)),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -466,11 +705,26 @@ class _RequirementDetailDrawerState extends State<RequirementDetailDrawer> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          final uri = Uri.parse(_missingRequest!.formUrl);
+                          if (await canLaunchUrl(uri)) await launchUrl(uri);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF673ab7),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          textStyle: const TextStyle(fontSize: 11),
+                        ),
+                        icon: const Icon(Icons.open_in_new, size: 12),
+                        label: const Text('Open Google Form'),
+                      ),
+                      const SizedBox(width: 8),
                       OutlinedButton.icon(
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: _missingRequest!.formUrl));
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Form link copied to clipboard! ✅')),
+                            const SnackBar(content: Text('Google Form link copied to clipboard! ✅')),
                           );
                         },
                         style: OutlinedButton.styleFrom(
@@ -480,20 +734,6 @@ class _RequirementDetailDrawerState extends State<RequirementDetailDrawer> {
                         ),
                         icon: const Icon(Icons.copy, size: 12),
                         label: const Text('Copy Form Link'),
-                      ),
-                      const SizedBox(width: 8),
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          final uri = Uri.parse(_missingRequest!.formUrl);
-                          if (await canLaunchUrl(uri)) await launchUrl(uri);
-                        },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AdminColors.slate200,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          textStyle: const TextStyle(fontSize: 11),
-                        ),
-                        icon: const Icon(Icons.open_in_new, size: 12),
-                        label: const Text('Open Form'),
                       ),
                     ],
                   ),

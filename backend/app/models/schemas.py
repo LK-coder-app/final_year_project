@@ -89,6 +89,7 @@ class RequirementResponse(BaseModel):
     llm_analysis_text: Optional[str] = None
     follow_up_token: Optional[str] = None
     follow_up_filled_at: Optional[datetime] = None
+    last_submitted_form_data: Optional[Dict[str, Any]] = None
     created_at: Optional[datetime] = None
     submitted_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
