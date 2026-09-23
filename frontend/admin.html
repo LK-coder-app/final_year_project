@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgriMind – Admin Dashboard</title>
+  <meta name="description" content="AgriMind Admin Dashboard: Review farmer submissions, run AI analysis, detect missing fields, and manage follow-ups." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <style>
+    /* Admin-specific overrides */
+    body { font-family: 'Outfit', 'Inter', sans-serif; }
+    .admin-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .admin-header-brand { display: flex; align-items: center; gap: 0.75rem; }
+    .admin-header-brand .brand-name { font-size: 1.2rem; font-weight: 700; color: #f1f5f9; }
+    .admin-badge {
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      color: white;
+      padding: 0.2rem 0.7rem;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .admin-main { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin: 0 0 1rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .req-table-wrap { overflow-x: auto; border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.08); }
+    .req-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    .req-table th {
+      background: rgba(255,255,255,0.04);
+      padding: 0.7rem 1rem;
+      text-align: left;
+      font-size: 0.72rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+    .req-table td { padding: 0.7rem 1rem; border-top: 1px solid rgba(255,255,255,0.06); color: #cbd5e1; vertical-align: middle; }
+    .req-table tr:hover td { background: rgba(255,255,255,0.03); }
+    .status-badge {
+      display: inline-block;
+      padding: 0.2rem 0.65rem;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .status-pending     { background: rgba(245,158,11,0.15);  color: #fbbf24; }
+    .status-under_review{ background: rgba(99,102,241,0.15);  color: #a5b4fc; }
+    .status-feasible    { background: rgba(16,185,129,0.15);  color: #34d399; }
+    .status-quoted      { background: rgba(59,130,246,0.15);  color: #93c5fd; }
+    .status-rejected    { background: rgba(239,68,68,0.15);   color: #f87171; }
+    .detail-drawer {
+      display: none;
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: min(600px, 100vw);
+      background: #1e293b;
+      border-left: 1px solid rgba(255,255,255,0.1);
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: -4px 0 40px rgba(0,0,0,0.4);
+    }
+    .drawer-header {
+      padding: 1.2rem 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: #1e293b;
+      z-index: 1;
+    }
+    .drawer-body { padding: 1.5rem; }
+    .drawer-section { margin-bottom: 1.5rem; }
+    .drawer-section-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #10b981;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .info-item { font-size: 0.82rem; }
+    .info-label { color: #64748b; font-size: 0.72rem; margin-bottom: 0.15rem; }
+    .info-value { color: #f1f5f9; font-weight: 500; }
+    .action-row { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+    .btn-sm {
+      padding: 0.4rem 0.9rem;
+      border-radius: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-violet { background: linear-gradient(135deg,#7c3aed,#4f46e5); color: white; border-color: #6d28d9; }
+    .btn-violet:hover { opacity: 0.9; }
+    .btn-teal { background: linear-gradient(135deg,#0d9488,#0891b2); color: white; }
+    .btn-teal:hover { opacity: 0.9; }
+    .btn-amber { background: linear-gradient(135deg,#d97706,#b45309); color: white; }
+    .btn-amber:hover { opacity: 0.9; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .filter-bar { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.2rem; align-items: center; }
+    .filter-bar input, .filter-bar select {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 0.4rem;
+      color: #f1f5f9;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.82rem;
+      outline: none;
+    }
+    .filter-bar input:focus, .filter-bar select:focus { border-color: #10b981; }
+    .sms-result {
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.82rem;
+      margin-top: 0.75rem;
+    }
+    .sms-result.success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); color: #34d399; }
+    .sms-result.error   { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.25);  color: #f87171; }
+    .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .kpi-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 0.75rem;
+      padding: 1rem 1.2rem;
+      text-align: center;
+    }
+    .kpi-value { font-size: 2rem; font-weight: 800; color: #10b981; }
+    .kpi-label { font-size: 0.72rem; color: #64748b; margin-top: 0.2rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    #drawer-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:999; }
+  </style>
+</head>
+<body>
+
+<div class="admin-header">
+  <div class="admin-header-brand">
+    <span style="font-size:1.5rem">🛡️</span>
+    <div>
+      <span class="brand-name">AgriMind</span>
+      <span class="admin-badge" style="margin-left:0.5rem">Admin</span>
+    </div>
+  </div>
+  <div style="display:flex;gap:0.75rem;align-items:center">
+    <button class="btn-sm btn-teal" onclick="loadData()" aria-label="Refresh dashboard">↺ Refresh</button>
+    <a href="/" style="color:#94a3b8;font-size:0.82rem;text-decoration:none">← Farmer Portal</a>
+  </div>
+</div>
+
+<div class="admin-main">
+  <h1 class="section-title" style="font-size:1.4rem;margin-bottom:1.5rem">📊 Submissions Dashboard</h1>
+
+  <!-- KPI Row -->
+  <div class="kpi-row" id="kpi-row">
+    <div class="kpi-card"><div class="kpi-value" id="kpi-total">—</div><div class="kpi-label">Total</div></div>
+    <div class="kpi-card"><div class="kpi-value" id="kpi-pending" style="color:#fbbf24">—</div><div class="kpi-label">Pending</div></div>
+    <div class="kpi-card"><div class="kpi-value" id="kpi-review" style="color:#a5b4fc">—</div><div class="kpi-label">Under Review</div></div>
+    <div class="kpi-card"><div class="kpi-value" id="kpi-feasible">—</div><div class="kpi-label">Feasible</div></div>
+    <div class="kpi-card"><div class="kpi-value" id="kpi-quoted" style="color:#93c5fd">—</div><div class="kpi-label">Quoted</div></div>
+    <div class="kpi-card"><div class="kpi-value" id="kpi-score">—</div><div class="kpi-label">Avg Score</div></div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <input type="search" id="search-input" placeholder="Search farmer, district, crop..." oninput="filterTable()" aria-label="Search requirements" />
+    <select id="status-filter" onchange="filterTable()" aria-label="Filter by status">
+      <option value="">All Statuses</option>
+      <option value="pending">Pending</option>
+      <option value="under_review">Under Review</option>
+      <option value="feasible">Feasible</option>
+      <option value="quoted">Quoted</option>
+      <option value="rejected">Rejected</option>
+    </select>
+    <select id="lang-filter" onchange="filterTable()" aria-label="Filter by language">
+      <option value="">All Languages</option>
+      <option value="english">English</option>
+      <option value="tamil">Tamil</option>
+      <option value="tanglish">Tanglish</option>
+    </select>
+  </div>
+
+  <!-- Requirements Table -->
+  <div class="req-table-wrap">
+    <table class="req-table" aria-label="Farmer requirements list">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Farmer</th>
+          <th>District</th>
+          <th>Crops</th>
+          <th>Land</th>
+          <th>Water</th>
+          <th>Score</th>
+          <th>Status</th>
+          <th>Submitted</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="req-table-body">
+        <tr><td colspan="10" style="text-align:center;padding:2rem;color:#64748b">Loading submissions...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Detail Drawer Overlay -->
+<div id="drawer-overlay" onclick="closeDrawer()"></div>
+
+<!-- Detail Drawer -->
+<aside class="detail-drawer" id="detail-drawer" role="complementary" aria-label="Requirement details">
+  <div class="drawer-header">
+    <div>
+      <div style="font-weight:700;color:#f1f5f9" id="drawer-title">Requirement Details</div>
+      <div style="font-size:0.78rem;color:#64748b" id="drawer-subtitle"></div>
+    </div>
+    <button onclick="closeDrawer()" style="background:none;border:none;color:#94a3b8;font-size:1.3rem;cursor:pointer" aria-label="Close details">&times;</button>
+  </div>
+  <div class="drawer-body" id="drawer-body">
+    <!-- Injected by JS -->
+  </div>
+</aside>
+
+<script>
+'use strict';
+const API = '/api';
+let allReqs = [];
+
+async function loadData() {
+  try {
+    const [statsRes, reqRes] = await Promise.all([
+      fetch(`${API}/stats`),
+      fetch(`${API}/requirements?limit=200`),
+    ]);
+    const stats = await statsRes.json();
+    const reqData = await reqRes.json();
+
+    document.getElementById('kpi-total').textContent   = stats.total_requirements ?? '—';
+    document.getElementById('kpi-pending').textContent  = stats.pending ?? '—';
+    document.getElementById('kpi-review').textContent   = stats.under_review ?? '—';
+    document.getElementById('kpi-feasible').textContent = stats.feasible ?? '—';
+    document.getElementById('kpi-quoted').textContent   = stats.quoted ?? '—';
+    document.getElementById('kpi-score').textContent    = stats.avg_feasibility_score > 0
+      ? `${stats.avg_feasibility_score}%` : '—';
+
+    allReqs = reqData.items || [];
+    renderTable(allReqs);
+  } catch (e) {
+    console.error(e);
+    document.getElementById('req-table-body').innerHTML =
+      `<tr><td colspan="10" style="text-align:center;color:#f87171;padding:2rem">⚠️ Failed to load: ${e.message}</td></tr>`;
+  }
+}
+
+function renderTable(items) {
+  const tbody = document.getElementById('req-table-body');
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:#64748b">No submissions found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(r => {
+    const date = r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'2-digit'}) : '—';
+    const score = r.feasibility_score != null ? `${r.feasibility_score}%` : '—';
+    const crops = Array.isArray(r.crop_types) ? r.crop_types.join(', ') : (r.crop_types || '—');
+    const land  = r.land_size ? `${r.land_size} ${r.land_unit || 'ac'}` : '—';
+    const hasMissing = r.missing_fields && r.missing_fields.length > 0;
+    const missingDot = hasMissing ? '<span title="Has missing fields" style="color:#f87171;margin-left:4px">●</span>' : '';
+    return `<tr>
+      <td><strong style="color:#10b981">AGM-${String(r.id).padStart(4,'0')}</strong></td>
+      <td>${r.farmer_name || '<em style="opacity:0.5">Unknown</em>'}${missingDot}</td>
+      <td>${r.district || '—'}</td>
+      <td>${crops}</td>
+      <td>${land}</td>
+      <td>${r.water_source || '—'}</td>
+      <td>${score}</td>
+      <td><span class="status-badge status-${r.status || 'pending'}">${(r.status || 'pending').replace('_',' ')}</span></td>
+      <td>${date}</td>
+      <td>
+        <button class="btn-sm btn-violet" onclick="openDrawer(${r.id})" aria-label="View details for AGM-${r.id}">View</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterTable() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const status = document.getElementById('status-filter').value;
+  const lang = document.getElementById('lang-filter').value;
+  const filtered = allReqs.filter(r => {
+    const matchQ = !q || [r.farmer_name, r.district, ...(r.crop_types || [])].some(v => v && v.toLowerCase().includes(q));
+    const matchS = !status || r.status === status;
+    const matchL = !lang || r.language === lang;
+    return matchQ && matchS && matchL;
+  });
+  renderTable(filtered);
+}
+
+async function openDrawer(id) {
+  document.getElementById('detail-drawer').style.display = 'block';
+  document.getElementById('drawer-overlay').style.display = 'block';
+  document.getElementById('drawer-body').innerHTML = '<div style="text-align:center;padding:2rem;color:#64748b"><div class="spinner"></div> Loading...</div>';
+
+  try {
+    const res = await fetch(`${API}/requirements/${id}`);
+    const r = await res.json();
+    renderDrawer(r);
+  } catch (e) {
+    document.getElementById('drawer-body').innerHTML = `<p style="color:#f87171">Failed to load: ${e.message}</p>`;
+  }
+}
+
+function closeDrawer() {
+  document.getElementById('detail-drawer').style.display = 'none';
+  document.getElementById('drawer-overlay').style.display = 'none';
+}
+
+function renderDrawer(r) {
+  document.getElementById('drawer-title').textContent = `AGM-${String(r.id).padStart(4,'0')} — ${r.farmer_name || 'Unknown Farmer'}`;
+  document.getElementById('drawer-subtitle').textContent = `${r.district || ''}  |  ${r.language || 'english'}  |  v${r.pdf_version || 1}`;
+
+  const crops = Array.isArray(r.crop_types) ? r.crop_types.join(', ') : (r.crop_types || '—');
+  const score = r.feasibility_score != null ? `${r.feasibility_score}%` : '—';
+  const conflicts = (r.conflicts || []);
+
+  document.getElementById('drawer-body').innerHTML = `
+    <!-- Farm Info -->
+    <div class="drawer-section">
+      <div class="drawer-section-title">&#127806; Farm Information</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="info-label">Farmer</div><div class="info-value">${r.farmer_name || '—'}</div></div>
+        <div class="info-item"><div class="info-label">Phone</div><div class="info-value">${r.farmer_phone || '—'}</div></div>
+        <div class="info-item"><div class="info-label">District</div><div class="info-value">${r.district || '—'}</div></div>
+        <div class="info-item"><div class="info-label">Language</div><div class="info-value">${r.language || '—'}</div></div>
+        <div class="info-item"><div class="info-label">Land</div><div class="info-value">${r.land_size ? r.land_size + ' ' + (r.land_unit||'ac') : '—'}</div></div>
+        <div class="info-item"><div class="info-label">Crops</div><div class="info-value">${crops}</div></div>
+        <div class="info-item"><div class="info-label">Water Source</div><div class="info-value">${r.water_source || '—'}</div></div>
+        <div class="info-item"><div class="info-label">Irrigation</div><div class="info-value">${r.irrigation_type || '—'}</div></div>
+        <div class="info-item"><div class="info-label">Motor HP</div><div class="info-value">${r.motor_hp ? r.motor_hp + ' HP' : '—'}</div></div>
+        <div class="info-item"><div class="info-label">Borewell Depth</div><div class="info-value">${r.borewell_depth_ft ? r.borewell_depth_ft + ' ft' : '—'}</div></div>
+        <div class="info-item"><div class="info-label">Power Phase</div><div class="info-value">${r.power_supply_phase || '—'}</div></div>
+        <div class="info-item"><div class="info-label">Feasibility</div><div class="info-value" style="color:#10b981">${score}</div></div>
+      </div>
+    </div>
+
+    <!-- Conflicts -->
+    ${conflicts.length > 0 ? `
+    <div class="drawer-section">
+      <div class="drawer-section-title">&#9888; Engineering Conflicts</div>
+      ${conflicts.map(c => `
+        <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:0.5rem;padding:0.75rem;margin-bottom:0.5rem;font-size:0.8rem">
+          <div style="font-weight:600;color:${c.severity==='high'?'#f87171':c.severity==='medium'?'#fbbf24':'#93c5fd'}">
+            ${c.severity === 'high' ? '🔴' : c.severity === 'medium' ? '🟡' : '🔵'} ${(c.type||'').replace(/_/g,' ').toUpperCase()}
+          </div>
+          <div style="color:#cbd5e1;margin:0.3rem 0">${c.message}</div>
+          <div style="color:#94a3b8">💡 ${c.recommendation}</div>
+        </div>
+      `).join('')}
+    </div>` : ''}
+
+    <!-- Admin Actions -->
+    <div class="drawer-section">
+      <div class="drawer-section-title">&#128736;&#65039; Admin Actions</div>
+      <div class="action-row">
+        <button class="btn-sm btn-violet" onclick="runAnalysis(${r.id})" id="btn-analyze-${r.id}">&#129302; AI Analysis</button>
+        <button class="btn-sm btn-amber" onclick="requestMissing(${r.id})" id="btn-missing-${r.id}">&#128241; Request Missing</button>
+        <button class="btn-sm btn-teal" onclick="regenPDF(${r.id})" id="btn-regen-${r.id}">&#128196; Regen PDF</button>
+        <a href="/api/requirements/${r.id}/pdf" target="_blank" class="btn-sm" style="background:rgba(255,255,255,0.08);color:#f1f5f9;border:1px solid rgba(255,255,255,0.1);text-decoration:none">
+          &#11015;&#65039; Download PDF
+        </a>
+      </div>
+
+      <!-- Status Update -->
+      <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-top:0.5rem">
+        <select id="status-select-${r.id}" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:0.4rem;color:#f1f5f9;padding:0.35rem 0.6rem;font-size:0.8rem">
+          <option value="pending" ${r.status==='pending'?'selected':''}>Pending</option>
+          <option value="under_review" ${r.status==='under_review'?'selected':''}>Under Review</option>
+          <option value="feasible" ${r.status==='feasible'?'selected':''}>Feasible</option>
+          <option value="quoted" ${r.status==='quoted'?'selected':''}>Quoted</option>
+          <option value="rejected" ${r.status==='rejected'?'selected':''}>Rejected</option>
+        </select>
+        <button class="btn-sm" style="background:rgba(255,255,255,0.06);color:#f1f5f9;border:1px solid rgba(255,255,255,0.1)" onclick="updateStatus(${r.id})">Update Status</button>
+      </div>
+    </div>
+
+    <!-- Analysis Panel -->
+    <div id="analysis-panel-${r.id}" class="analysis-panel" style="display:${r.llm_analysis_text ? 'block' : 'none'}">
+      <h4>&#129302; AI Analysis Result</h4>
+      ${r.missing_fields && r.missing_fields.length > 0 ? `
+        <div style="margin-bottom:0.75rem">
+          <div style="font-size:0.75rem;color:#64748b;margin-bottom:0.4rem">Missing Fields:</div>
+          ${r.missing_fields.map(f => `<span class="field-chip missing">&#10007; ${f.label || f.field}</span>`).join('')}
+        </div>` : ''}
+      <div class="analysis-text-box" id="analysis-text-${r.id}">${r.llm_analysis_text || ''}</div>
+    </div>
+
+    <!-- SMS / Form Link Result -->
+    <div id="sms-result-${r.id}"></div>
+  `;
+}
+
+async function runAnalysis(id) {
+  const btn = document.getElementById(`btn-analyze-${id}`);
+  btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${API}/requirements/${id}/analyze`, { method: 'POST' });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+
+    // Show analysis panel
+    const panel = document.getElementById(`analysis-panel-${id}`);
+    const textBox = document.getElementById(`analysis-text-${id}`);
+    if (panel) panel.style.display = 'block';
+    if (textBox) textBox.textContent = data.analysis_text;
+
+    // Show missing field chips
+    const missingHtml = [
+      ...data.missing_required.map(f => `<span class="field-chip missing">✗ ${f.label}</span>`),
+      ...data.missing_optional.map(f => `<span class="field-chip optional">– ${f.label}</span>`),
+      ...data.present_fields.map(f => `<span class="field-chip present">✓ ${f.label}</span>`),
+    ].join('');
+
+    if (panel) {
+      panel.querySelector('h4').insertAdjacentHTML('afterend',
+        `<div style="margin-bottom:0.75rem;flex-wrap:wrap">${missingHtml}</div>`);
+    }
+
+    await loadData();
+    btn.innerHTML = '✅ Analysis Done';
+  } catch (e) {
+    btn.innerHTML = '⚠️ Failed';
+    btn.disabled = false;
+    console.error(e);
+  }
+}
+
+async function requestMissing(id) {
+  const btn = document.getElementById(`btn-missing-${id}`);
+  btn.innerHTML = '<span class="spinner"></span> Sending...';
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${API}/requirements/${id}/request-missing`, { method: 'POST' });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+
+    const resultEl = document.getElementById(`sms-result-${id}`);
+    if (resultEl) {
+      resultEl.innerHTML = `
+        <div class="sms-result success">
+          <strong>${data.sms_sent ? '📱 SMS Sent!' : '🔗 Form Link Generated'}</strong>
+          <div class="form-link-box" style="margin-top:0.5rem">
+            <a href="${data.form_url}" target="_blank">${data.form_url}</a>
+            <button onclick="navigator.clipboard.writeText('${data.form_url}').then(()=>alert('Copied!'))"
+              style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:0.3rem;color:#f1f5f9;padding:0.2rem 0.5rem;cursor:pointer;font-size:0.72rem;margin-left:auto;white-space:nowrap">
+              Copy Link
+            </button>
+          </div>
+          <div style="margin-top:0.4rem;font-size:0.78rem">${data.message}</div>
+        </div>`;
+    }
+    btn.innerHTML = '✅ Done';
+  } catch (e) {
+    const resultEl = document.getElementById(`sms-result-${id}`);
+    if (resultEl) resultEl.innerHTML = `<div class="sms-result error">⚠️ ${e.message}</div>`;
+    btn.innerHTML = '⚠️ Failed';
+    btn.disabled = false;
+  }
+}
+
+async function regenPDF(id) {
+  const btn = document.getElementById(`btn-regen-${id}`);
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${API}/requirements/${id}/regenerate-pdf`, { method: 'POST' });
+    if (!res.ok) throw new Error(await res.text());
+    btn.innerHTML = '✅ Regenerated';
+    await loadData();
+  } catch (e) {
+    btn.innerHTML = '⚠️ Failed';
+    btn.disabled = false;
+  }
+}
+
+async function updateStatus(id) {
+  const select = document.getElementById(`status-select-${id}`);
+  const status = select.value;
+  try {
+    const res = await fetch(`${API}/requirements/${id}/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    alert(`Status updated to "${status}"`);
+    await loadData();
+  } catch (e) {
+    alert(`Failed: ${e.message}`);
+  }
+}
+
+// Init
+loadData();
+</script>
+</body>
+</html>

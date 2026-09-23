@@ -1,0 +1,3 @@
+"""
+AgriMind - Models Package
+"""

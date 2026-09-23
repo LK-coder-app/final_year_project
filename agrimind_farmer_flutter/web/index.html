@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="agrimind_farmer_flutter">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>agrimind_farmer_flutter</title>
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <script>
+    window.agrimindVoice = {
+      recTa: null,
+      recEn: null,
+      isRecording: false,
+      start: function(mode) {
+        var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          window.dispatchEvent(new CustomEvent('agrimind-voice-error', { detail: 'Speech recognition is not supported in this browser.' }));
+          return false;
+        }
+        this.isRecording = true;
+        var self = this;
+        var activeRecs = [];
+
+        function setup(lang) {
+          var r = new SpeechRecognition();
+          r.continuous = false;
+          r.interimResults = true;
+          r.lang = lang;
+          r.onresult = function(e) {
+            var text = '';
+            for (var i = 0; i < e.results.length; i++) {
+              text += e.results[i][0].transcript;
+            }
+            window.dispatchEvent(new CustomEvent('agrimind-voice-result', { detail: { text: text, lang: lang } }));
+          };
+          r.onerror = function(e) {
+            if (e.error !== 'no-speech' && e.error !== 'aborted') {
+              window.dispatchEvent(new CustomEvent('agrimind-voice-error', { detail: e.error }));
+            }
+          };
+          r.onend = function() {
+            activeRecs = activeRecs.filter(function(x) { return x !== r; });
+            if (activeRecs.length === 0) {
+              self.isRecording = false;
+              window.dispatchEvent(new CustomEvent('agrimind-voice-end'));
+            }
+          };
+          return r;
+        }
+
+        if (mode === 'tamil' || mode === 'auto') {
+          this.recTa = setup('ta-IN');
+          try { this.recTa.start(); activeRecs.push(this.recTa); } catch(e){}
+        }
+        if (mode === 'english' || mode === 'auto') {
+          this.recEn = setup('en-IN');
+          setTimeout(function() {
+            try { self.recEn.start(); activeRecs.push(self.recEn); } catch(e){}
+          }, 80);
+        }
+        return true;
+      },
+      stop: function() {
+        this.isRecording = false;
+        if (this.recTa) try { this.recTa.stop(); } catch(e){}
+        if (this.recEn) try { this.recEn.stop(); } catch(e){}
+      }
+    };
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

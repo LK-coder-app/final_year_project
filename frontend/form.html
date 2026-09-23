@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgriMind – Complete Your Information</title>
+  <meta name="description" content="AgriMind farmer follow-up form to provide missing agricultural requirement information." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <style>
+    body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 2rem 1rem; background: var(--bg-primary, #0f172a); }
+    .form-card {
+      width: 100%;
+      max-width: 600px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 1rem;
+      overflow: hidden;
+    }
+    .form-card-header {
+      background: linear-gradient(135deg, #064e3b, #065f46);
+      padding: 1.5rem 1.8rem;
+    }
+    .form-card-header h1 { margin: 0; font-size: 1.3rem; font-weight: 700; color: white; }
+    .form-card-header p  { margin: 0.4rem 0 0; font-size: 0.85rem; color: rgba(255,255,255,0.7); }
+    .report-id-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      padding: 0.2rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      color: white;
+      font-weight: 600;
+      margin-top: 0.6rem;
+    }
+    .form-card-body { padding: 1.8rem; }
+    .field-group { margin-bottom: 1.2rem; }
+    .field-group label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: #94a3b8;
+      margin-bottom: 0.4rem;
+    }
+    .field-group label span.required { color: #f87171; margin-left: 0.2rem; }
+    .field-group input,
+    .field-group select,
+    .field-group textarea {
+      width: 100%;
+      box-sizing: border-box;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 0.5rem;
+      color: #f1f5f9;
+      padding: 0.6rem 0.9rem;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .field-group input:focus,
+    .field-group select:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+    .field-group select option { background: #1e293b; }
+    .submit-btn {
+      width: 100%;
+      padding: 0.8rem;
+      border-radius: 0.6rem;
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-top: 0.5rem;
+    }
+    .submit-btn:hover { opacity: 0.9; }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .success-screen {
+      text-align: center;
+      padding: 3rem 2rem;
+    }
+    .success-icon { font-size: 4rem; margin-bottom: 1rem; }
+    .success-title { font-size: 1.4rem; font-weight: 700; color: #10b981; margin-bottom: 0.5rem; }
+    .success-msg { color: #94a3b8; font-size: 0.9rem; line-height: 1.6; }
+    .error-screen { text-align: center; padding: 3rem 2rem; }
+    .loading-screen { text-align: center; padding: 3rem 2rem; }
+    .spinner { display: inline-block; width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #10b981; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .field-type-tag {
+      display: inline-block;
+      font-size: 0.67rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 10px;
+      margin-left: 0.4rem;
+      vertical-align: middle;
+    }
+    .req-tag { background: rgba(248,113,113,0.15); color: #f87171; }
+    .opt-tag { background: rgba(148,163,184,0.12); color: #94a3b8; }
+    .logo-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .logo-row .brand { font-size: 1rem; font-weight: 700; color: #10b981; }
+  </style>
+</head>
+<body>
+
+<div style="max-width:600px;width:100%;margin-bottom:1rem">
+  <div class="logo-row">
+    <span style="font-size:1.4rem">🌿</span>
+    <span class="brand">AgriMind</span>
+    <span style="color:#64748b;font-size:0.8rem">· Farmer Information Form</span>
+  </div>
+</div>
+
+<div class="form-card" id="form-card">
+  <div class="loading-screen" id="loading-screen">
+    <div class="spinner"></div>
+    <div style="margin-top:1rem;color:#64748b;font-size:0.9rem">Loading your form...</div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const API = '/api';
+
+function getToken() {
+  return new URLSearchParams(window.location.search).get('token');
+}
+
+const REQUIRED_FIELDS = new Set(['land_size', 'land_unit', 'crop_types', 'water_source', 'motor_hp', 'irrigation_type']);
+
+const FIELD_OPTIONS = {
+  land_unit: ['acres', 'hectares', 'cents'],
+  water_source: ['Borewell', 'Open Well', 'Canal', 'River', 'Tank/Pond', 'Rainwater'],
+  irrigation_type: ['Drip', 'Sprinkler', 'Micro Sprinkler', 'Flood', 'Furrow', 'Overhead'],
+  soil_type: ['Red Loam', 'Black Cotton', 'Alluvial Clay', 'Sandy Loam', 'Sandy', 'Clay', 'Loam'],
+  power_supply_phase: ['Single Phase', 'Three Phase'],
+};
+
+const FIELD_UNITS = {
+  land_size: 'acres',
+  borewell_depth_ft: 'feet',
+  open_well_depth_ft: 'feet',
+  motor_hp: 'HP',
+  power_hours_per_day: 'hours/day',
+  budget_inr: '₹ INR',
+};
+
+let formData = null;
+
+async function init() {
+  const token = getToken();
+  if (!token) {
+    showError('Invalid form link. Please ask AgriMind admin for a new link.');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/form/${token}`);
+    if (!res.ok) throw new Error('Invalid or expired form token.');
+    formData = await res.json();
+    renderForm(formData);
+  } catch (e) {
+    showError(e.message);
+  }
+}
+
+function renderForm(data) {
+  const card = document.getElementById('form-card');
+  const missingFields = data.missing_fields || [];
+
+  if (missingFields.length === 0) {
+    card.innerHTML = `
+      <div class="success-screen">
+        <div class="success-icon">✅</div>
+        <div class="success-title">All Information Complete</div>
+        <div class="success-msg">Thank you, ${data.farmer_name || 'Farmer'}! Your form <strong>${data.report_id}</strong> already has all required information. No action needed.</div>
+      </div>`;
+    return;
+  }
+
+  const requiredMissing = missingFields.filter(f => REQUIRED_FIELDS.has(f.field));
+  const optionalMissing = missingFields.filter(f => !REQUIRED_FIELDS.has(f.field));
+
+  card.innerHTML = `
+    <div class="form-card-header">
+      <h1>📋 Complete Your Information</h1>
+      <p>Hello, <strong>${data.farmer_name || 'Farmer'}</strong>! Please fill in the missing details below.</p>
+      <span class="report-id-badge">Report ID: ${data.report_id}</span>
+    </div>
+    <div class="form-card-body">
+      <form id="fill-form" onsubmit="submitForm(event)">
+        ${requiredMissing.length > 0 ? `
+          <div style="font-size:0.75rem;font-weight:600;color:#f87171;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem">
+            ⚠️ Required Fields (${requiredMissing.length})
+          </div>
+          ${requiredMissing.map(f => buildFieldHtml(f, true)).join('')}
+        ` : ''}
+        ${optionalMissing.length > 0 ? `
+          <div style="font-size:0.75rem;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin:1rem 0 0.75rem 0">
+            ℹ️ Optional Fields
+          </div>
+          ${optionalMissing.map(f => buildFieldHtml(f, false)).join('')}
+        ` : ''}
+        <button type="submit" class="submit-btn" id="submit-btn">
+          🚀 Submit Information
+        </button>
+      </form>
+    </div>`;
+}
+
+function buildFieldHtml(field, required) {
+  const key = field.field;
+  const label = field.label;
+  const unit = FIELD_UNITS[key] ? ` <small style="color:#64748b">(${FIELD_UNITS[key]})</small>` : '';
+  const tag = required
+    ? '<span class="field-type-tag req-tag">Required</span>'
+    : '<span class="field-type-tag opt-tag">Optional</span>';
+
+  if (FIELD_OPTIONS[key]) {
+    const options = FIELD_OPTIONS[key].map(o =>
+      `<option value="${o}">${o}</option>`).join('');
+    return `
+      <div class="field-group">
+        <label for="field-${key}">${label}${unit}${tag}${required ? '<span class="required">*</span>' : ''}</label>
+        <select id="field-${key}" name="${key}" ${required ? 'required' : ''}>
+          <option value="">— Select ${label} —</option>
+          ${options}
+        </select>
+      </div>`;
+  }
+
+  // Special: crop_types as text
+  if (key === 'crop_types') {
+    return `
+      <div class="field-group">
+        <label for="field-${key}">${label}${tag}${required ? '<span class="required">*</span>' : ''}</label>
+        <input type="text" id="field-${key}" name="${key}" placeholder="e.g. Sugarcane, Banana" ${required ? 'required' : ''} />
+        <div style="font-size:0.72rem;color:#64748b;margin-top:0.25rem">Separate multiple crops with commas</div>
+      </div>`;
+  }
+
+  // Numeric fields
+  if (['land_size','borewell_depth_ft','open_well_depth_ft','motor_hp','power_hours_per_day','budget_inr'].includes(key)) {
+    return `
+      <div class="field-group">
+        <label for="field-${key}">${label}${unit}${tag}${required ? '<span class="required">*</span>' : ''}</label>
+        <input type="number" id="field-${key}" name="${key}" step="0.01" min="0" placeholder="Enter value" ${required ? 'required' : ''} />
+      </div>`;
+  }
+
+  // Text fallback
+  return `
+    <div class="field-group">
+      <label for="field-${key}">${label}${tag}${required ? '<span class="required">*</span>' : ''}</label>
+      <input type="text" id="field-${key}" name="${key}" placeholder="Enter ${label.toLowerCase()}" ${required ? 'required' : ''} />
+    </div>`;
+}
+
+async function submitForm(e) {
+  e.preventDefault();
+  const token = getToken();
+  const btn = document.getElementById('submit-btn');
+  btn.textContent = '⏳ Submitting...';
+  btn.disabled = true;
+
+  const filled = {};
+  const form = document.getElementById('fill-form');
+  const inputs = form.querySelectorAll('input, select, textarea');
+  inputs.forEach(el => {
+    if (!el.name || !el.value) return;
+    let val = el.value.trim();
+    if (!val) return;
+
+    // Type conversions
+    if (el.name === 'crop_types') {
+      val = val.split(',').map(s => s.trim()).filter(Boolean);
+    } else if (['land_size','borewell_depth_ft','open_well_depth_ft','motor_hp','power_hours_per_day','budget_inr'].includes(el.name)) {
+      val = parseFloat(val);
+    }
+    filled[el.name] = val;
+  });
+
+  if (Object.keys(filled).length === 0) {
+    btn.textContent = '🚀 Submit Information';
+    btn.disabled = false;
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/requirements/${formData.requirement_id}/fill-missing`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, filled_data: filled }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    showSuccess(data);
+  } catch (err) {
+    btn.textContent = '🚀 Submit Information';
+    btn.disabled = false;
+    alert(`Failed to submit: ${err.message}`);
+  }
+}
+
+function showSuccess(data) {
+  const card = document.getElementById('form-card');
+  card.innerHTML = `
+    <div class="success-screen">
+      <div class="success-icon">🌿</div>
+      <div class="success-title">Thank You!</div>
+      <div class="success-msg">
+        ${data.message || 'Your information has been submitted successfully.'}<br><br>
+        <strong>${data.updated_fields.length}</strong> field(s) updated:<br>
+        <em style="color:#10b981">${data.updated_fields.join(', ')}</em><br><br>
+        An updated report has been generated. The AgriMind team will contact you shortly.
+      </div>
+    </div>`;
+}
+
+function showError(msg) {
+  const card = document.getElementById('form-card');
+  card.innerHTML = `
+    <div class="error-screen">
+      <div style="font-size:3rem;margin-bottom:1rem">🔒</div>
+      <div style="font-size:1.2rem;font-weight:700;color:#f87171;margin-bottom:0.5rem">Invalid Form Link</div>
+      <div style="color:#94a3b8;font-size:0.9rem">${msg}</div>
+    </div>`;
+}
+
+init();
+</script>
+</body>
+</html>
