@@ -9,7 +9,11 @@ class AdminColors {
   static const emerald300 = Color(0xFF6ee7b7);
 
   static const indigo600  = Color(0xFF4f46e5);
+  static const indigo500  = Color(0xFF6366f1);
   static const violet600  = Color(0xFF7c3aed);
+  static const violet500  = Color(0xFF8b5cf6);
+  static const violet400  = Color(0xFFa78bfa);
+  static const violet300  = Color(0xFFc4b5fd);
 
   static const amber500   = Color(0xFFf59e0b);
   static const red500     = Color(0xFFef4444);

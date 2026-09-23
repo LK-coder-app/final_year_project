@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -16,6 +16,7 @@ load_dotenv()
 
 from .models.database import init_db
 from .api.routes import router
+from .api.auth import auth_router
 
 # ─── App Factory ──────────────────────────────────────────────────────────────
 
@@ -38,6 +39,7 @@ app.add_middleware(
 
 # ─── API Routes ───────────────────────────────────────────────────────────────
 app.include_router(router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
 
 # ─── Static Frontend / Flutter Web ────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent

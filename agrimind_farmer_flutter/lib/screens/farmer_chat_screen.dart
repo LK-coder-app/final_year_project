@@ -246,10 +246,41 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
               ),
             ),
             const SizedBox(width: 8),
+            // Logged-in farmer name badge
+            if (ApiService.currentUser != null) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AgriColors.emerald900,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AgriColors.emerald600.withValues(alpha: 0.5)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.person, size: 13, color: AgriColors.emerald400),
+                    const SizedBox(width: 4),
+                    Text(
+                      ApiService.currentUser!.fullName,
+                      style: const TextStyle(fontSize: 11, color: AgriColors.emerald300, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
             IconButton(
               tooltip: 'New Conversation',
               icon: const Icon(Icons.refresh, color: AgriColors.slate400, size: 20),
               onPressed: _startNewSession,
+            ),
+            IconButton(
+              tooltip: 'Sign Out',
+              icon: const Icon(Icons.logout, color: Colors.redAccent, size: 18),
+              onPressed: () {
+                ApiService.logout();
+                Navigator.of(context).pushReplacementNamed('/login');
+              },
             ),
           ],
         ),

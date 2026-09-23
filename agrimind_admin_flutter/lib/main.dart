@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'theme.dart';
+import 'api_service.dart';
+import 'screens/admin_login_screen.dart';
 import 'screens/admin_dashboard_screen.dart';
 
 void main() {
@@ -15,7 +17,10 @@ class AgriMindAdminApp extends StatelessWidget {
       title: 'AgriMind – Admin Dashboard',
       debugShowCheckedModeBanner: false,
       theme: AdminTheme.dark,
-      home: const AdminDashboardScreen(),
+      home: AdminApiService.isAuthenticated
+          ? const AdminDashboardScreen()
+          : const AdminLoginScreen(),
     );
   }
 }
+

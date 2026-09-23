@@ -28,6 +28,64 @@ class AdminApiService {
     return 'http://127.0.0.1:8000/api';
   }
 
+  static AdminUser? currentUser;
+  static String? authToken;
+
+  static bool get isAuthenticated => currentUser != null;
+
+  static void logout() {
+    currentUser = null;
+    authToken = null;
+  }
+
+  static Future<AdminAuthResponse> loginAdmin(String username, String password) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/auth/admin/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'username': username,
+        'password': password,
+      }),
+    ).timeout(const Duration(seconds: 15));
+
+    if (res.statusCode != 200) {
+      final err = jsonDecode(utf8.decode(res.bodyBytes));
+      throw Exception(err['detail'] ?? 'Login failed (${res.statusCode})');
+    }
+
+    final authRes = AdminAuthResponse.fromJson(jsonDecode(utf8.decode(res.bodyBytes)));
+    currentUser = authRes.user;
+    authToken = authRes.accessToken;
+    return authRes;
+  }
+
+  static Future<List<FarmerAccount>> getFarmers() async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/auth/farmers'),
+      headers: {
+        if (authToken != null) 'Authorization': 'Bearer $authToken',
+      },
+    ).timeout(const Duration(seconds: 15));
+
+    if (res.statusCode != 200) throw Exception('Failed to load farmers list');
+    final data = jsonDecode(utf8.decode(res.bodyBytes));
+    return (data['farmers'] as List? ?? []).map((f) => FarmerAccount.fromJson(f)).toList();
+  }
+
+  static Future<FarmerAccount> toggleFarmerStatus(int farmerId, bool isActive) async {
+    final res = await http.patch(
+      Uri.parse('$baseUrl/auth/farmers/$farmerId/status'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (authToken != null) 'Authorization': 'Bearer $authToken',
+      },
+      body: jsonEncode({'is_active': isActive}),
+    ).timeout(const Duration(seconds: 15));
+
+    if (res.statusCode != 200) throw Exception('Failed to update farmer status');
+    return FarmerAccount.fromJson(jsonDecode(utf8.decode(res.bodyBytes)));
+  }
+
   static Future<DashboardStats> getStats() async {
     final res = await http.get(Uri.parse('$baseUrl/stats')).timeout(const Duration(seconds: 15));
     if (res.statusCode != 200) throw Exception('Failed to load stats');

@@ -160,3 +160,87 @@ class RequestMissingResult {
     );
   }
 }
+
+class AdminUser {
+  final int id;
+  final String email;
+  final String? phone;
+  final String fullName;
+  final String role;
+  final bool isActive;
+
+  AdminUser({
+    required this.id,
+    required this.email,
+    this.phone,
+    required this.fullName,
+    required this.role,
+    required this.isActive,
+  });
+
+  factory AdminUser.fromJson(Map<String, dynamic> j) => AdminUser(
+    id: j['id'] ?? 0,
+    email: j['email'] ?? '',
+    phone: j['phone'],
+    fullName: j['full_name'] ?? 'Administrator',
+    role: j['role'] ?? 'admin',
+    isActive: j['is_active'] ?? true,
+  );
+}
+
+class AdminAuthResponse {
+  final bool success;
+  final String accessToken;
+  final AdminUser user;
+  final String message;
+
+  AdminAuthResponse({
+    required this.success,
+    required this.accessToken,
+    required this.user,
+    required this.message,
+  });
+
+  factory AdminAuthResponse.fromJson(Map<String, dynamic> j) => AdminAuthResponse(
+    success: j['success'] ?? false,
+    accessToken: j['access_token'] ?? '',
+    user: AdminUser.fromJson(j['user'] ?? {}),
+    message: j['message'] ?? '',
+  );
+}
+
+class FarmerAccount {
+  final int id;
+  final String email;
+  final String? phone;
+  final String fullName;
+  final String role;
+  final String? firebaseUid;
+  final bool isActive;
+  final String? createdAt;
+  final String? lastLogin;
+
+  FarmerAccount({
+    required this.id,
+    required this.email,
+    this.phone,
+    required this.fullName,
+    required this.role,
+    this.firebaseUid,
+    required this.isActive,
+    this.createdAt,
+    this.lastLogin,
+  });
+
+  factory FarmerAccount.fromJson(Map<String, dynamic> j) => FarmerAccount(
+    id: j['id'] ?? 0,
+    email: j['email'] ?? '',
+    phone: j['phone'],
+    fullName: j['full_name'] ?? 'Farmer',
+    role: j['role'] ?? 'farmer',
+    firebaseUid: j['firebase_uid'],
+    isActive: j['is_active'] ?? true,
+    createdAt: j['created_at'],
+    lastLogin: j['last_login'],
+  );
+}

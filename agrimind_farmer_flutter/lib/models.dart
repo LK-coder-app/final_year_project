@@ -98,3 +98,60 @@ class SubmitResult {
     pdfAvailable: j['pdf_available'] ?? false,
   );
 }
+
+class AuthUser {
+  final int id;
+  final String email;
+  final String? phone;
+  final String fullName;
+  final String role;
+  final bool isActive;
+
+  AuthUser({
+    required this.id,
+    required this.email,
+    this.phone,
+    required this.fullName,
+    required this.role,
+    required this.isActive,
+  });
+
+  factory AuthUser.fromJson(Map<String, dynamic> j) => AuthUser(
+    id: j['id'] ?? 0,
+    email: j['email'] ?? '',
+    phone: j['phone'],
+    fullName: j['full_name'] ?? 'Farmer',
+    role: j['role'] ?? 'farmer',
+    isActive: j['is_active'] ?? true,
+  );
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'email': email,
+    'phone': phone,
+    'full_name': fullName,
+    'role': role,
+    'is_active': isActive,
+  };
+}
+
+class AuthResponse {
+  final bool success;
+  final String accessToken;
+  final AuthUser user;
+  final String message;
+
+  AuthResponse({
+    required this.success,
+    required this.accessToken,
+    required this.user,
+    required this.message,
+  });
+
+  factory AuthResponse.fromJson(Map<String, dynamic> j) => AuthResponse(
+    success: j['success'] ?? false,
+    accessToken: j['access_token'] ?? '',
+    user: AuthUser.fromJson(j['user'] ?? {}),
+    message: j['message'] ?? '',
+  );
+}

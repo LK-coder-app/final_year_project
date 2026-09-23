@@ -1,13 +1,15 @@
 """
 AgriMind - SQLAlchemy Database Models + Seed Data
 """
+import hashlib
+import hmac
 import json
 import os
 import secrets
 from datetime import datetime, timezone
 
 from sqlalchemy import (
-    Column, DateTime, Float, Integer, JSON, String, Text, create_engine
+    Boolean, Column, DateTime, Float, Integer, JSON, String, Text, create_engine
 )
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -101,6 +103,32 @@ class ConversationLog(Base):
     created_at = Column(DateTime, default=utcnow)
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    phone = Column(String(30), unique=True, index=True, nullable=True)
+    full_name = Column(String(255), nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    role = Column(String(20), default="farmer", index=True)  # "farmer" or "admin"
+    firebase_uid = Column(String(128), unique=True, nullable=True, index=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=utcnow)
+    last_login = Column(DateTime, nullable=True)
+
+
+# ─── Password Security Helpers ───────────────────────────────────────────────
+
+AUTH_SALT = "agrimind_security_salt_2026"
+
+def hash_password(password: str) -> str:
+    return hashlib.sha256(f"{AUTH_SALT}:{password}".encode("utf-8")).hexdigest()
+
+def verify_password(password: str, hashed: str) -> bool:
+    return hmac.compare_digest(hash_password(password), hashed)
+
+
 # ─── DB Helpers ──────────────────────────────────────────────────────────────
 
 def get_db():
@@ -114,7 +142,48 @@ def get_db():
 def init_db():
     Base.metadata.create_all(bind=engine)
     _migrate_add_columns()
+    _seed_auth_users()
     _seed_demo_data()
+
+
+def _seed_auth_users():
+    """Seed initial default Administrator and sample Farmer accounts."""
+    db = SessionLocal()
+    try:
+        # 1. Admin account
+        admin = db.query(User).filter(User.email == "admin@agrimind.ai").first()
+        if not admin:
+            admin = User(
+                email="admin@agrimind.ai",
+                phone="+919000000001",
+                full_name="AgriMind Administrator",
+                password_hash=hash_password("admin123"),
+                role="admin",
+                is_active=True,
+            )
+            db.add(admin)
+            print("[AgriMind] Seeded Admin account: admin@agrimind.ai / admin123")
+
+        # 2. Farmer account
+        farmer = db.query(User).filter(User.email == "murugesan@agrimind.ai").first()
+        if not farmer:
+            farmer = User(
+                email="murugesan@agrimind.ai",
+                phone="+919876543210",
+                full_name="Murugesan K.",
+                password_hash=hash_password("farmer123"),
+                role="farmer",
+                is_active=True,
+            )
+            db.add(farmer)
+            print("[AgriMind] Seeded Farmer account: murugesan@agrimind.ai / farmer123")
+
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"[AgriMind] Seed auth users error (non-fatal): {e}")
+    finally:
+        db.close()
 
 
 def _migrate_add_columns():
