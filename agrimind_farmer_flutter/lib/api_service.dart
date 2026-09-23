@@ -1,10 +1,34 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'models.dart';
 
 class ApiService {
-  // Configurable base URL: can point to localhost:8000 or Render 24/7 cloud URL
-  static String baseUrl = 'http://localhost:8000/api';
+  static String? _customBaseUrl;
+
+  static void setBaseUrl(String url) {
+    _customBaseUrl = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+  }
+
+  static String get baseUrl {
+    if (_customBaseUrl != null && _customBaseUrl!.isNotEmpty) {
+      return _customBaseUrl!;
+    }
+    if (kIsWeb) {
+      final origin = Uri.base.origin;
+      // If hosted on Render (e.g. https://xxx.onrender.com) or any remote domain or port 8000
+      if (origin.startsWith('http://') || origin.startsWith('https://')) {
+        if (!origin.contains('localhost') && !origin.contains('127.0.0.1')) {
+          return '$origin/api';
+        }
+        if (Uri.base.port == 8000) {
+          return '$origin/api';
+        }
+      }
+    }
+    // Fallback for local development (127.0.0.1 is more reliable on Windows than localhost)
+    return 'http://127.0.0.1:8000/api';
+  }
 
   static Future<Map<String, dynamic>> checkHealth() async {
     try {

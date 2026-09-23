@@ -1,9 +1,32 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'models.dart';
 
 class AdminApiService {
-  static String baseUrl = 'http://localhost:8000/api';
+  static String? _customBaseUrl;
+
+  static void setBaseUrl(String url) {
+    _customBaseUrl = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+  }
+
+  static String get baseUrl {
+    if (_customBaseUrl != null && _customBaseUrl!.isNotEmpty) {
+      return _customBaseUrl!;
+    }
+    if (kIsWeb) {
+      final origin = Uri.base.origin;
+      if (origin.startsWith('http://') || origin.startsWith('https://')) {
+        if (!origin.contains('localhost') && !origin.contains('127.0.0.1')) {
+          return '$origin/api';
+        }
+        if (Uri.base.port == 8000) {
+          return '$origin/api';
+        }
+      }
+    }
+    return 'http://127.0.0.1:8000/api';
+  }
 
   static Future<DashboardStats> getStats() async {
     final res = await http.get(Uri.parse('$baseUrl/stats')).timeout(const Duration(seconds: 15));
