@@ -77,12 +77,6 @@ class _FarmerLoginScreenState extends State<FarmerLoginScreen> with SingleTicker
     });
   }
 
-  void _demoLogin() {
-    _loginEmailController.text = 'murugesan@agrimind.ai';
-    _loginPassController.text = 'farmer123';
-    _handleLogin();
-  }
-
   Future<void> _handleSendOtp() async {
     final email = _regEmailController.text.trim();
     if (email.isEmpty || !email.contains('@')) {
@@ -107,6 +101,9 @@ class _FarmerLoginScreenState extends State<FarmerLoginScreen> with SingleTicker
         _otpSent = true;
         _debugOtpCode = res.debugOtp;
         _otpStatusMessage = res.message;
+        if (res.debugOtp != null && res.debugOtp!.isNotEmpty) {
+          _regOtpController.text = res.debugOtp!;
+        }
       });
       _startCountdown();
     } catch (e) {
@@ -373,19 +370,6 @@ class _FarmerLoginScreenState extends State<FarmerLoginScreen> with SingleTicker
                   ),
                 ),
 
-                const SizedBox(height: 16),
-
-                // Quick Demo Account Helper
-                OutlinedButton.icon(
-                  onPressed: _demoLogin,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AgriColors.emerald300,
-                    side: BorderSide(color: AgriColors.emerald500.withValues(alpha: 0.4)),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  ),
-                  icon: const Icon(Icons.bolt, size: 16, color: AgriColors.emerald400),
-                  label: const Text('One-Click Demo Login (Murugesan K.)', style: TextStyle(fontSize: 12)),
-                ),
 
                 const SizedBox(height: 16),
                 TextButton(

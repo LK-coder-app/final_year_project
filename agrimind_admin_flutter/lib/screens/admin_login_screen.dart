@@ -23,12 +23,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     super.dispose();
   }
 
-  void _fillDemoCredentials() {
-    _usernameController.text = 'admin@agrimind.ai';
-    _passwordController.text = 'admin123';
-    _handleLogin();
-  }
-
   Future<void> _handleLogin() async {
     final username = _usernameController.text.trim();
     final pass = _passwordController.text;
@@ -218,19 +212,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 16),
-
-                // Quick Demo Admin Helper
-                OutlinedButton.icon(
-                  onPressed: _fillDemoCredentials,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AdminColors.violet300,
-                    side: BorderSide(color: AdminColors.violet500.withValues(alpha: 0.4)),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  ),
-                  icon: const Icon(Icons.vpn_key, size: 16, color: AdminColors.violet400),
-                  label: const Text('One-Click Demo Admin (admin@agrimind.ai)', style: TextStyle(fontSize: 12)),
-                ),
 
                 const SizedBox(height: 20),
                 TextButton(
