@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme.dart';
 import '../models.dart';
 import '../api_service.dart';
@@ -26,6 +28,10 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
   bool _isRecording = false;
   String _detectedLang = 'english';
   String _voiceMode = 'auto'; // 'auto', 'tamil', 'english'
+
+  // Admin Account Notifications (Leftout Requirements Form & Delivered PDF)
+  FarmerNotificationStatus? _portalStatus;
+  Timer? _pollTimer;
 
   static const List<Map<String, dynamic>> _quickPrompts = [
     {
@@ -61,6 +67,21 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
   void initState() {
     super.initState();
     _startNewSession();
+    _loadPortalNotifications();
+    _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (mounted) _loadPortalNotifications();
+    });
+  }
+
+  Future<void> _loadPortalNotifications() async {
+    try {
+      final status = await ApiService.getPortalNotifications();
+      if (mounted) {
+        setState(() {
+          _portalStatus = status;
+        });
+      }
+    } catch (_) {}
   }
 
   void _startNewSession() {
@@ -78,11 +99,13 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
           '(e.g., "enaku 3 acre karumbu irukku, borewell 250 feet").\n\n'
           'I will extract your requirements, evaluate feasibility, and prepare a technical report for your irrigation project.',
     ));
+    _loadPortalNotifications();
     setState(() {});
   }
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _textController.dispose();
     _scrollController.dispose();
     VoiceHelper.stop();
@@ -364,6 +387,12 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
             ),
           ),
         ),
+
+        // Active Account Notifications from Admin
+        if (_portalStatus?.hasPendingForm == true)
+          _buildPendingFormCard(),
+        if (_portalStatus?.pdfDelivered == true)
+          _buildDeliveredPdfCard(),
 
         // Message Feed
         Expanded(
@@ -689,4 +718,151 @@ class _FarmerChatScreenState extends State<FarmerChatScreen> {
       ),
     );
   }
+
+  Widget _buildPendingFormCard() {
+    final status = _portalStatus!;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2e1065).withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFc084fc), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.purple.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.assignment_late, color: Color(0xFFe9d5ff), size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '📋 Action Required: Additional Specifications Requested (${status.reportCode ?? "AGM"})',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: Colors.purple.shade700, borderRadius: BorderRadius.circular(4)),
+                child: const Text('Pending Form', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'The engineering admin analyzed your submission and requested additional missing fields to complete your technical evaluation.',
+            style: TextStyle(color: Color(0xFFe9d5ff), fontSize: 12),
+          ),
+          if (status.missingFields.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: status.missingFields.map((f) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: const Color(0xFFa855f7)),
+                ),
+                child: Text('• ${f['label']}', style: const TextStyle(color: Color(0xFFf3e8ff), fontSize: 11)),
+              )).toList(),
+            ),
+          ],
+          const SizedBox(height: 10),
+          ElevatedButton.icon(
+            onPressed: () async {
+              if (status.formUrl != null) {
+                final uri = Uri.parse(status.formUrl!);
+                if (await canLaunchUrl(uri)) await launchUrl(uri);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF7c3aed),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            ),
+            icon: const Icon(Icons.edit_document, size: 14),
+            label: const Text('Open & Fill Leftout Requirements Form', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeliveredPdfCard() {
+    final status = _portalStatus!;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF064e3b).withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AgriColors.emerald400, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: AgriColors.emerald500.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.verified, color: AgriColors.emerald300, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '🎉 Your Verified Requirement & Feasibility Report is Ready! (PDF v${status.pdfVersion})',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: AgriColors.emerald700, borderRadius: BorderRadius.circular(4)),
+                child: Text('PDF v${status.pdfVersion}', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'The engineering team has approved your technical parameters and updated the official engineering PDF report for ${status.reportCode ?? "your proposal"}.',
+            style: const TextStyle(color: Color(0xFFd1fae5), fontSize: 12),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              ElevatedButton.icon(
+                onPressed: () async {
+                  if (status.pdfUrl != null) {
+                    final uri = Uri.parse(status.pdfUrl!);
+                    if (await canLaunchUrl(uri)) await launchUrl(uri);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AgriColors.emerald500,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                ),
+                icon: const Icon(Icons.download, size: 14),
+                label: const Text('Download / View Updated PDF Report', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
+

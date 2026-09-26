@@ -131,9 +131,9 @@ class AdminApiService {
     return RequestMissingResult.fromJson(jsonDecode(utf8.decode(res.bodyBytes)));
   }
 
-  static Future<Map<String, dynamic>> regeneratePdf(int reqId) async {
+  static Future<Map<String, dynamic>> regeneratePdf(int reqId, {bool deliverToFarmer = true}) async {
     final res = await http.post(
-      Uri.parse('$baseUrl/requirements/$reqId/regenerate-pdf'),
+      Uri.parse('$baseUrl/requirements/$reqId/regenerate-pdf?deliver_to_farmer=$deliverToFarmer'),
     ).timeout(const Duration(seconds: 30));
 
     if (res.statusCode != 200) throw Exception('Regenerate PDF failed: ${res.statusCode}');

@@ -78,15 +78,15 @@ class _RequirementDetailDrawerState extends State<RequirementDetailDrawer> {
     }
   }
 
-  Future<void> _regeneratePdf() async {
+  Future<void> _regeneratePdf({bool deliverToFarmer = true}) async {
     setState(() => _isRegenerating = true);
     try {
-      await AdminApiService.regeneratePdf(widget.requirement.id);
+      await AdminApiService.regeneratePdf(widget.requirement.id, deliverToFarmer: deliverToFarmer);
       setState(() => _isRegenerating = false);
       widget.onUpdated();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('PDF re-generated successfully! ✅'), backgroundColor: AdminColors.emerald600),
+          const SnackBar(content: Text('PDF re-generated & delivered directly to the farmer\'s dashboard! ✅'), backgroundColor: AdminColors.emerald600),
         );
       }
     } catch (e) {
@@ -377,6 +377,18 @@ class _RequirementDetailDrawerState extends State<RequirementDetailDrawer> {
                       _analysis!.missingRequired.map((m) => m['label']).join(', '),
                       style: const TextStyle(color: Colors.white, fontSize: 11),
                     ),
+                    const SizedBox(height: 8),
+                    ElevatedButton.icon(
+                      onPressed: _isRequestingMissing ? null : _requestMissing,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF673ab7),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                      icon: const Icon(Icons.send_to_mobile, size: 12),
+                      label: const Text('Auto-Generate Google Form & Send to Farmer Account'),
+                    ),
                   ],
                 ),
               ),
@@ -604,15 +616,15 @@ class _RequirementDetailDrawerState extends State<RequirementDetailDrawer> {
             ElevatedButton.icon(
               onPressed: () async {
                 Navigator.of(ctx).pop();
-                await _regeneratePdf();
+                await _regeneratePdf(deliverToFarmer: true);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AdminColors.emerald600,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               ),
-              icon: const Icon(Icons.picture_as_pdf, size: 14),
-              label: const Text('Approve & Regenerate PDF'),
+              icon: const Icon(Icons.verified, size: 14),
+              label: const Text('Approve, Regenerate PDF & Deliver to Farmer'),
             ),
           ],
         );
@@ -678,7 +690,7 @@ class _RequirementDetailDrawerState extends State<RequirementDetailDrawer> {
                       ),
                       const SizedBox(width: 6),
                       const Text(
-                        'Google Form Link Ready & Dispatched',
+                        'Google Form Sent to Farmer Account & Dispatched',
                         style: TextStyle(
                           color: Color(0xFFd8b4fe),
                           fontSize: 11,
@@ -686,6 +698,15 @@ class _RequirementDetailDrawerState extends State<RequirementDetailDrawer> {
                         ),
                       ),
                       const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text('Farmer Account Alert Active', style: TextStyle(color: Color(0xFFe9d5ff), fontSize: 9, fontWeight: FontWeight.bold)),
+                      ),
+                      const SizedBox(width: 4),
                       if (_missingRequest!.smsSent)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

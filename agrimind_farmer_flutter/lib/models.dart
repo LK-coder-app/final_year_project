@@ -198,3 +198,62 @@ class OtpVerifyResponse {
   );
 }
 
+class FarmerNotificationStatus {
+  final bool hasActiveRequirement;
+  final int? requirementId;
+  final String? reportCode;
+  final String? farmerName;
+  final String? status;
+  final bool hasPendingForm;
+  final String? formUrl;
+  final String? followUpToken;
+  final List<Map<String, String>> missingFields;
+  final bool pdfDelivered;
+  final int pdfVersion;
+  final String? pdfUrl;
+  final String? followUpFilledAt;
+  final String? pdfDeliveredAt;
+  final String? lastUpdated;
+
+  FarmerNotificationStatus({
+    required this.hasActiveRequirement,
+    this.requirementId,
+    this.reportCode,
+    this.farmerName,
+    this.status,
+    this.hasPendingForm = false,
+    this.formUrl,
+    this.followUpToken,
+    this.missingFields = const [],
+    this.pdfDelivered = false,
+    this.pdfVersion = 1,
+    this.pdfUrl,
+    this.followUpFilledAt,
+    this.pdfDeliveredAt,
+    this.lastUpdated,
+  });
+
+  factory FarmerNotificationStatus.fromJson(Map<String, dynamic> j) {
+    return FarmerNotificationStatus(
+      hasActiveRequirement: j['has_active_requirement'] ?? false,
+      requirementId: j['requirement_id'],
+      reportCode: j['report_code'],
+      farmerName: j['farmer_name'],
+      status: j['status'],
+      hasPendingForm: j['has_pending_form'] ?? false,
+      formUrl: j['form_url'],
+      followUpToken: j['follow_up_token'],
+      missingFields: (j['missing_fields'] as List? ?? [])
+          .map((m) => Map<String, String>.from(m as Map))
+          .toList(),
+      pdfDelivered: j['pdf_delivered'] ?? false,
+      pdfVersion: j['pdf_version'] ?? 1,
+      pdfUrl: j['pdf_url'],
+      followUpFilledAt: j['follow_up_filled_at'],
+      pdfDeliveredAt: j['pdf_delivered_at'],
+      lastUpdated: j['last_updated'],
+    );
+  }
+}
+
+

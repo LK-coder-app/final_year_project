@@ -169,11 +169,29 @@ class ApiService {
     return ChatResponse.fromJson(jsonDecode(utf8.decode(res.bodyBytes)));
   }
 
+  static Future<FarmerNotificationStatus> getPortalNotifications() async {
+    try {
+      final email = currentUser?.email ?? '';
+      final phone = currentUser?.phone ?? '';
+      final name = currentUser?.fullName ?? '';
+      final uri = Uri.parse('$baseUrl/farmer/portal-notifications?email=$email&phone=$phone&name=$name');
+      final res = await http.get(uri).timeout(const Duration(seconds: 15));
+      if (res.statusCode != 200) {
+        return FarmerNotificationStatus(hasActiveRequirement: false);
+      }
+      return FarmerNotificationStatus.fromJson(jsonDecode(utf8.decode(res.bodyBytes)));
+    } catch (_) {
+      return FarmerNotificationStatus(hasActiveRequirement: false);
+    }
+  }
+
   static Future<SubmitResult> submitRequirement({
     required String sessionId,
     required String farmerName,
     String? farmerPhone,
+    String? farmerEmail,
   }) async {
+    final email = farmerEmail ?? currentUser?.email;
     final res = await http.post(
       Uri.parse('$baseUrl/requirements/submit'),
       headers: {'Content-Type': 'application/json'},
@@ -181,6 +199,7 @@ class ApiService {
         'session_id': sessionId,
         'farmer_name': farmerName,
         'farmer_phone': farmerPhone,
+        if (email != null && email.isNotEmpty) 'farmer_email': email,
         'confirm': true,
       }),
     ).timeout(const Duration(seconds: 30));

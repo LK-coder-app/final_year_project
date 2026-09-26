@@ -20,6 +20,9 @@ class RequirementSummary {
   final Map<String, dynamic>? lastSubmittedFormData;
   final Map<String, dynamic> extractedSlots;
   final List<Map<String, dynamic>> conflicts;
+  final bool pdfDeliveredToFarmer;
+  final String? pdfDeliveredAt;
+  final bool formSentToAccount;
 
   RequirementSummary({
     required this.id,
@@ -43,6 +46,9 @@ class RequirementSummary {
     this.lastSubmittedFormData,
     required this.extractedSlots,
     required this.conflicts,
+    this.pdfDeliveredToFarmer = false,
+    this.pdfDeliveredAt,
+    this.formSentToAccount = false,
   });
 
   factory RequirementSummary.fromJson(Map<String, dynamic> j) {
@@ -70,6 +76,9 @@ class RequirementSummary {
           : null,
       extractedSlots: Map<String, dynamic>.from(j['extracted_slots'] ?? {}),
       conflicts: (j['conflicts'] as List? ?? []).map((c) => Map<String, dynamic>.from(c)).toList(),
+      pdfDeliveredToFarmer: j['pdf_delivered_to_farmer'] ?? false,
+      pdfDeliveredAt: j['pdf_delivered_at'],
+      formSentToAccount: j['form_sent_to_account'] ?? false,
     );
   }
 }

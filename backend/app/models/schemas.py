@@ -32,6 +32,7 @@ class RequirementSubmitRequest(BaseModel):
     farmer_name: str
     farmer_phone: Optional[str] = None
     confirm: bool = True
+    farmer_email: Optional[str] = None
 
 class SlotData(BaseModel):
     land_size: Optional[float] = None
@@ -66,6 +67,7 @@ class RequirementResponse(BaseModel):
     session_id: str
     farmer_name: Optional[str] = None
     farmer_phone: Optional[str] = None
+    farmer_email: Optional[str] = None
     district: Optional[str] = None
     language: Optional[str] = None
     land_size: Optional[float] = None
@@ -90,12 +92,32 @@ class RequirementResponse(BaseModel):
     follow_up_token: Optional[str] = None
     follow_up_filled_at: Optional[datetime] = None
     last_submitted_form_data: Optional[Dict[str, Any]] = None
+    form_sent_to_account: Optional[bool] = False
+    pdf_delivered_to_farmer: Optional[bool] = False
+    pdf_delivered_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
     submitted_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
+
+class FarmerPortalStatusResponse(BaseModel):
+    has_active_requirement: bool
+    requirement_id: Optional[int] = None
+    report_code: Optional[str] = None
+    farmer_name: Optional[str] = None
+    status: Optional[str] = None
+    has_pending_form: bool = False
+    form_url: Optional[str] = None
+    follow_up_token: Optional[str] = None
+    missing_fields: List[Dict[str, str]] = []
+    pdf_delivered: bool = False
+    pdf_version: int = 1
+    pdf_url: Optional[str] = None
+    follow_up_filled_at: Optional[datetime] = None
+    pdf_delivered_at: Optional[datetime] = None
+    last_updated: Optional[datetime] = None
 
 class RequirementListResponse(BaseModel):
     total: int

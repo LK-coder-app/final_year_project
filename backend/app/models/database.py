@@ -36,6 +36,7 @@ class FarmerRequirement(Base):
     session_id = Column(String(64), unique=True, index=True)
     farmer_name = Column(String(255), nullable=True)
     farmer_phone = Column(String(20), nullable=True)
+    farmer_email = Column(String(255), nullable=True, index=True)
     district = Column(String(100), nullable=True)
     language = Column(String(20), default="english")
 
@@ -83,6 +84,9 @@ class FarmerRequirement(Base):
     follow_up_sent_at = Column(DateTime, nullable=True)
     follow_up_filled_at = Column(DateTime, nullable=True)
     last_submitted_form_data = Column(JSON, nullable=True)
+    form_sent_to_account = Column(Boolean, default=False)
+    pdf_delivered_to_farmer = Column(Boolean, default=False)
+    pdf_delivered_at = Column(DateTime, nullable=True)
 
     # Metadata
     created_at = Column(DateTime, default=utcnow)
@@ -193,6 +197,7 @@ def _migrate_add_columns():
         inspector = inspect(engine)
         columns = {c["name"] for c in inspector.get_columns("farmer_requirements")}
         new_cols = {
+            "farmer_email": "VARCHAR(255)",
             "missing_fields": "TEXT",
             "llm_analysis_text": "TEXT",
             "follow_up_token": "VARCHAR(64)",
@@ -200,6 +205,9 @@ def _migrate_add_columns():
             "follow_up_filled_at": "DATETIME",
             "last_submitted_form_data": "TEXT",
             "pdf_version": "INTEGER DEFAULT 1",
+            "form_sent_to_account": "BOOLEAN DEFAULT 0",
+            "pdf_delivered_to_farmer": "BOOLEAN DEFAULT 0",
+            "pdf_delivered_at": "DATETIME",
         }
         with engine.connect() as conn:
             for col, dtype in new_cols.items():
