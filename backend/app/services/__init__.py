@@ -1,0 +1,3 @@
+"""
+AgriMind Backend Services Package
+"""

@@ -155,3 +155,46 @@ class AuthResponse {
     message: j['message'] ?? '',
   );
 }
+
+class OtpSendResponse {
+  final bool success;
+  final String message;
+  final String email;
+  final String? debugOtp;
+
+  OtpSendResponse({
+    required this.success,
+    required this.message,
+    required this.email,
+    this.debugOtp,
+  });
+
+  factory OtpSendResponse.fromJson(Map<String, dynamic> j) => OtpSendResponse(
+    success: j['success'] ?? false,
+    message: j['message'] ?? '',
+    email: j['email'] ?? '',
+    debugOtp: j['debug_otp'],
+  );
+}
+
+class OtpVerifyResponse {
+  final bool success;
+  final String message;
+  final String email;
+  final String verificationToken;
+
+  OtpVerifyResponse({
+    required this.success,
+    required this.message,
+    required this.email,
+    required this.verificationToken,
+  });
+
+  factory OtpVerifyResponse.fromJson(Map<String, dynamic> j) => OtpVerifyResponse(
+    success: j['success'] ?? false,
+    message: j['message'] ?? '',
+    email: j['email'] ?? '',
+    verificationToken: j['verification_token'] ?? '',
+  );
+}
+

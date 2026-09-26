@@ -140,7 +140,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'Enter your engineering admin credentials to continue',
+                        'Enter your Admin ID & Password. Administrators are provisioned directly in Firebase Console by the main administrator.',
                         style: TextStyle(color: AdminColors.slate400, fontSize: 12),
                       ),
                       const SizedBox(height: 20),

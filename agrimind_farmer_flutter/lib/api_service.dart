@@ -61,11 +61,54 @@ class ApiService {
     return authRes;
   }
 
+  static Future<OtpSendResponse> sendOtp({
+    required String email,
+    String? name,
+  }) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/auth/otp/send'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        if (name != null && name.isNotEmpty) 'name': name,
+      }),
+    ).timeout(const Duration(seconds: 15));
+
+    final data = jsonDecode(utf8.decode(res.bodyBytes));
+    if (res.statusCode != 200) {
+      throw Exception(data['detail'] ?? 'Failed to send OTP code (${res.statusCode})');
+    }
+    return OtpSendResponse.fromJson(data);
+  }
+
+  static Future<OtpVerifyResponse> verifyOtp({
+    required String email,
+    required String otp,
+  }) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/auth/otp/verify'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'otp': otp,
+      }),
+    ).timeout(const Duration(seconds: 15));
+
+    final data = jsonDecode(utf8.decode(res.bodyBytes));
+    if (res.statusCode != 200) {
+      throw Exception(data['detail'] ?? 'OTP verification failed (${res.statusCode})');
+    }
+    return OtpVerifyResponse.fromJson(data);
+  }
+
   static Future<AuthResponse> registerFarmer({
     required String fullName,
     required String email,
     String? phone,
     required String password,
+    String? confirmPassword,
+    String? otp,
+    String? verificationToken,
   }) async {
     final res = await http.post(
       Uri.parse('$baseUrl/auth/farmer/register'),
@@ -75,6 +118,9 @@ class ApiService {
         'email': email,
         if (phone != null && phone.isNotEmpty) 'phone': phone,
         'password': password,
+        if (confirmPassword != null) 'confirm_password': confirmPassword,
+        if (otp != null) 'otp': otp,
+        if (verificationToken != null) 'verification_token': verificationToken,
       }),
     ).timeout(const Duration(seconds: 15));
 
